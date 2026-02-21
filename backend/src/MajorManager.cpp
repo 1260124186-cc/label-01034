@@ -91,3 +91,17 @@ Major MajorManager::getMajorById(int id) {
     sqlite3_finalize(stmt);
     return m;
 }
+
+bool MajorManager::hasRelatedStudents(int majorId) {
+    sqlite3* db = DatabaseManager::getInstance()->getDB();
+    sqlite3_stmt* stmt;
+    std::string sql = "SELECT COUNT(*) FROM students WHERE major_id = ?;";
+    sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    sqlite3_bind_int(stmt, 1, majorId);
+    bool has = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        has = sqlite3_column_int(stmt, 0) > 0;
+    }
+    sqlite3_finalize(stmt);
+    return has;
+}

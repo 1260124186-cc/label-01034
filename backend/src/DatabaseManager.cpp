@@ -1,4 +1,6 @@
 #include "DatabaseManager.h"
+#include "Logger.h"
+#include "SHA256Util.h"
 #include <iostream>
 
 DatabaseManager* DatabaseManager::instance = nullptr;
@@ -27,11 +29,11 @@ bool DatabaseManager::open(const std::string& path) {
     dbPath = path;
     int rc = sqlite3_open(path.c_str(), &db);
     if (rc != SQLITE_OK) {
-        std::cerr << "无法打开数据库: " << sqlite3_errmsg(db) << std::endl;
+        Logger::getInstance()->error("无法打开数据库: " + std::string(sqlite3_errmsg(db)), "DatabaseManager");
         return false;
     }
+    Logger::getInstance()->info("数据库连接成功: " + path, "DatabaseManager");
     // 不启用外键约束，由应用层保证数据一致性
-    // 避免注册时因关联表数据不存在而失败
     execute("PRAGMA foreign_keys = OFF;");
     createTables();
     return true;
@@ -39,6 +41,7 @@ bool DatabaseManager::open(const std::string& path) {
 
 void DatabaseManager::close() {
     if (db) {
+        Logger::getInstance()->info("关闭数据库连接", "DatabaseManager");
         sqlite3_close(db);
         db = nullptr;
     }
@@ -48,7 +51,7 @@ bool DatabaseManager::execute(const std::string& sql) {
     char* errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL错误: " << errMsg << std::endl;
+        Logger::getInstance()->error("SQL错误: " + std::string(errMsg), "DatabaseManager");
         sqlite3_free(errMsg);
         return false;
     }
@@ -56,7 +59,8 @@ bool DatabaseManager::execute(const std::string& sql) {
 }
 
 void DatabaseManager::createTables() {
-    // 用户表
+    Logger::getInstance()->info("开始初始化数据库表结构", "DatabaseManager");
+
     execute(R"(
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +71,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 学生表
     execute(R"(
         CREATE TABLE IF NOT EXISTS students (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +82,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 教师表
     execute(R"(
         CREATE TABLE IF NOT EXISTS teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,7 +93,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 学院表
     execute(R"(
         CREATE TABLE IF NOT EXISTS colleges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +101,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 专业表
     execute(R"(
         CREATE TABLE IF NOT EXISTS majors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,7 +110,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 课程表
     execute(R"(
         CREATE TABLE IF NOT EXISTS courses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +124,6 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 选课记录表
     execute(R"(
         CREATE TABLE IF NOT EXISTS course_selections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,9 +136,10 @@ void DatabaseManager::createTables() {
         );
     )");
 
-    // 插入默认管理员账号（如果不存在）
-    execute(R"(
-        INSERT OR IGNORE INTO users (username, password, name, role)
-        VALUES ('admin', 'admin123', '系统管理员', 0);
-    )");
+    // 默认管理员密码使用SHA256哈希存储
+    std::string adminPassHash = SHA256Util::hash("admin123");
+    std::string sql = "INSERT OR IGNORE INTO users (username, password, name, role) VALUES ('admin', '" + adminPassHash + "', '系统管理员', 0);";
+    execute(sql);
+
+    Logger::getInstance()->info("数据库表结构初始化完成", "DatabaseManager");
 }

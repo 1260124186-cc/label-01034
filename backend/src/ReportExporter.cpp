@@ -2,6 +2,7 @@
 #include "StudentManager.h"
 #include "TeacherManager.h"
 #include "DatabaseManager.h"
+#include "Logger.h"
 #include <fstream>
 #include <iostream>
 #include <sqlite3.h>
@@ -9,7 +10,7 @@
 bool ReportExporter::exportCoursesToCSV(const std::vector<Course>& courses, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "无法创建文件: " << filename << std::endl;
+        Logger::getInstance()->error("无法创建文件: " + filename, "ReportExporter");
         return false;
     }
 
@@ -26,13 +27,14 @@ bool ReportExporter::exportCoursesToCSV(const std::vector<Course>& courses, cons
     }
 
     file.close();
+    Logger::getInstance()->info("导出课程列表CSV: " + filename + " (" + std::to_string(courses.size()) + "条)", "ReportExporter");
     return true;
 }
 
 bool ReportExporter::exportCoursesToTXT(const std::vector<Course>& courses, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "无法创建文件: " << filename << std::endl;
+        Logger::getInstance()->error("无法创建文件: " + filename, "ReportExporter");
         return false;
     }
 
@@ -49,12 +51,16 @@ bool ReportExporter::exportCoursesToTXT(const std::vector<Course>& courses, cons
     }
 
     file.close();
+    Logger::getInstance()->info("导出课程列表TXT: " + filename, "ReportExporter");
     return true;
 }
 
 bool ReportExporter::exportSelectionsToCSV(int studentId, const std::string& filename) {
     std::ofstream file(filename);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        Logger::getInstance()->error("无法创建文件: " + filename, "ReportExporter");
+        return false;
+    }
 
     StudentManager sm;
     auto courses = sm.getSelectedCourses(studentId);
@@ -69,12 +75,16 @@ bool ReportExporter::exportSelectionsToCSV(int studentId, const std::string& fil
     }
 
     file.close();
+    Logger::getInstance()->info("导出学生选课记录CSV: " + filename, "ReportExporter");
     return true;
 }
 
 bool ReportExporter::exportCourseStudentsToCSV(int courseId, const std::string& filename) {
     std::ofstream file(filename);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        Logger::getInstance()->error("无法创建文件: " + filename, "ReportExporter");
+        return false;
+    }
 
     TeacherManager tm;
     auto students = tm.getStudentsByCourse(courseId);
@@ -88,5 +98,6 @@ bool ReportExporter::exportCourseStudentsToCSV(int courseId, const std::string& 
     }
 
     file.close();
+    Logger::getInstance()->info("导出课程学生名单CSV: " + filename, "ReportExporter");
     return true;
 }

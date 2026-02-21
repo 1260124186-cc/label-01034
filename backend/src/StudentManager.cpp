@@ -2,6 +2,7 @@
 #include "CourseManager.h"
 #include "SelectionStrategy.h"
 #include "DatabaseManager.h"
+#include "Logger.h"
 #include <sqlite3.h>
 
 bool StudentManager::hasSelected(int studentId, int courseId) {
@@ -63,6 +64,7 @@ bool StudentManager::selectCourse(int studentId, int courseId, std::string& erro
 
     // 更新课程已选人数
     cm.incrementEnrolled(courseId);
+    Logger::getInstance()->info("选课成功: 学生ID=" + std::to_string(studentId) + " 课程ID=" + std::to_string(courseId), "StudentManager");
     return true;
 }
 
@@ -82,6 +84,7 @@ bool StudentManager::dropCourse(int studentId, int courseId) {
     if (ok) {
         CourseManager cm;
         cm.decrementEnrolled(courseId);
+        Logger::getInstance()->info("退选成功: 学生ID=" + std::to_string(studentId) + " 课程ID=" + std::to_string(courseId), "StudentManager");
     }
     return ok;
 }

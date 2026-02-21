@@ -23,10 +23,16 @@ public:
     // 查询
     std::vector<User> getAllUsers();
     bool usernameExists(const std::string& username);
+    User getUserById(int userId);
 
     // 获取学生/教师详细信息
     Student getStudentByUserId(int userId);
     Teacher getTeacherByUserId(int userId);
+
+    // 管理员用户管理
+    bool updateUserName(int userId, const std::string& newName);
+    bool resetPassword(int userId, const std::string& newPassword);
+    bool deleteUser(int userId);
 };
 
 #endif // USER_MANAGER_H

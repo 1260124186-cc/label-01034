@@ -6,11 +6,22 @@
 #include <vector>
 #include <set>
 
+// 时间段结构体：星期 + 节次区间
+struct TimeSlot {
+    std::string day;  // "周一"~"周日"
+    int startPeriod;  // 起始节次
+    int endPeriod;    // 结束节次
+
+    // 判断两个时间段是否重叠
+    bool overlapsWith(const TimeSlot& other) const {
+        return day == other.day && startPeriod <= other.endPeriod && endPeriod >= other.startPeriod;
+    }
+};
+
 // 策略模式 - 选课策略接口
 class SelectionStrategy {
 public:
     virtual ~SelectionStrategy() = default;
-    // 检查是否允许选课，返回true表示允许，errorMsg返回错误信息
     virtual bool canSelect(int studentId, const Course& course, std::string& errorMsg) = 0;
 };
 
@@ -20,14 +31,14 @@ public:
     bool canSelect(int studentId, const Course& course, std::string& errorMsg) override;
 };
 
-// 时间冲突检测策略
+// 时间冲突检测策略（区间重叠判断）
 class TimeConflictStrategy : public SelectionStrategy {
 public:
     bool canSelect(int studentId, const Course& course, std::string& errorMsg) override;
 
 private:
-    // 解析时间表字符串为时间段集合
-    std::set<std::string> parseSchedule(const std::string& schedule);
+    // 解析时间表字符串为 TimeSlot 列表
+    std::vector<TimeSlot> parseSchedule(const std::string& schedule);
     // 获取学生已选课程的时间表
     std::vector<std::string> getStudentSchedules(int studentId);
 };

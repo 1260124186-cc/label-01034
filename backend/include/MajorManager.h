@@ -13,6 +13,8 @@ public:
     std::vector<Major> getAllMajors();
     std::vector<Major> getMajorsByCollege(int collegeId);
     Major getMajorById(int id);
+    // 检查专业下是否有关联的学生
+    bool hasRelatedStudents(int majorId);
 };
 
 #endif // MAJOR_MANAGER_H

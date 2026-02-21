@@ -173,9 +173,12 @@ users, students, teachers, colleges, majors, courses, course_selections
     │   ├── Course.h            # 课程类
     │   ├── CourseManager.h     # 课程管理
     │   ├── DatabaseManager.h   # 数据库管理（单例模式）
+    │   ├── InputValidator.h    # 输入校验工具
+    │   ├── Logger.h            # 日志记录器（单例模式）
     │   ├── Major.h             # 专业类
     │   ├── MajorManager.h      # 专业管理
     │   ├── ReportExporter.h    # 报表导出
+    │   ├── SHA256Util.h        # SHA256哈希工具
     │   ├── SelectionStrategy.h # 选课策略（策略模式）
     │   ├── Student.h           # 学生类（继承User）
     │   ├── StudentManager.h    # 学生选课管理
@@ -189,9 +192,12 @@ users, students, teachers, colleges, majors, courses, course_selections
     │   ├── CollegeManager.cpp
     │   ├── CourseManager.cpp
     │   ├── DatabaseManager.cpp
+    │   ├── InputValidator.cpp
+    │   ├── Logger.cpp
     │   ├── Main.cpp            # 主程序入口与菜单交互
     │   ├── MajorManager.cpp
     │   ├── ReportExporter.cpp
+    │   ├── SHA256Util.cpp
     │   ├── SelectionStrategy.cpp
     │   ├── StudentManager.cpp
     │   ├── TeacherManager.cpp
@@ -200,6 +206,7 @@ users, students, teachers, colleges, majors, courses, course_selections
     ├── build/                  # 编译产物（自动生成）
     └── data/                   # 运行时数据（自动生成）
         ├── campus.db           # SQLite 数据库
+        ├── system.log          # 系统日志
         └── *.csv / *.txt       # 导出的报表文件
 ```
 
@@ -207,7 +214,7 @@ users, students, teachers, colleges, majors, courses, course_selections
 
 | 模块 | 说明 |
 |------|------|
-| 用户管理 | 登录、注册、角色识别（管理员/教师/学生），输入自动 trim |
+| 用户管理 | 登录、注册、角色识别（管理员/教师/学生），输入自动 trim，密码 SHA256 哈希存储 |
 | 学院管理 | 增删改查学院信息（管理员），含存在性校验 |
 | 专业管理 | 增删改查专业，关联所属学院（管理员），含存在性校验 |
 | 教师管理 | 注册教师、发布课程、查看选课学生名单 |
@@ -221,6 +228,7 @@ users, students, teachers, colleges, majors, courses, course_selections
 | 模式 | 实现 | 说明 |
 |------|------|------|
 | 单例模式 | `DatabaseManager` | 全局唯一数据库连接，统一管理生命周期 |
+| 单例模式 | `Logger` | 全局日志记录器，支持日志级别（DEBUG/INFO/WARN/ERROR/FATAL）、文件输出、时间戳 |
 | 工厂模式 | `UserFactory` | 根据角色创建 Student/Teacher/Admin 对象 |
 | 策略模式 | `SelectionStrategy` | FirstComeStrategy（容量检查）+ TimeConflictStrategy（时间冲突）+ CompositeStrategy（组合） |
 | 代理模式 | `AuthProxy` | 根据当前登录角色控制功能访问权限 |

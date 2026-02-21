@@ -10,6 +10,8 @@
 #include "ReportExporter.h"
 #include "Student.h"
 #include "Teacher.h"
+#include "Logger.h"
+#include "InputValidator.h"
 
 #include <iostream>
 #include <string>
@@ -109,6 +111,19 @@ void manageColleges() {
             int id;
             cout << "请输入要删除的学院ID: ";
             cin >> id;
+            College existing = collegeMgr.getCollegeById(id);
+            if (existing.getId() == 0) {
+                cout << "学院不存在！" << endl;
+                continue;
+            }
+            if (collegeMgr.hasRelatedMajors(id)) {
+                cout << "该学院下存在关联的专业，无法删除！请先删除相关专业。" << endl;
+                continue;
+            }
+            if (collegeMgr.hasRelatedTeachers(id)) {
+                cout << "该学院下存在关联的教师，无法删除！请先处理相关教师。" << endl;
+                continue;
+            }
             if (collegeMgr.deleteCollege(id))
                 cout << "删除成功！" << endl;
             else
@@ -180,6 +195,15 @@ void manageMajors() {
             int id;
             cout << "请输入要删除的专业ID: ";
             cin >> id;
+            Major existingMajor = majorMgr.getMajorById(id);
+            if (existingMajor.getId() == 0) {
+                cout << "专业不存在！" << endl;
+                continue;
+            }
+            if (majorMgr.hasRelatedStudents(id)) {
+                cout << "该专业下存在关联的学生，无法删除！请先处理相关学生。" << endl;
+                continue;
+            }
             if (majorMgr.deleteMajor(id))
                 cout << "删除成功！" << endl;
             else
@@ -212,13 +236,104 @@ void manageUsers() {
         cout << "权限不足！" << endl;
         return;
     }
-    cout << "\n--- 用户列表 ---" << endl;
-    auto users = userMgr.getAllUsers();
-    cout << "ID\t用户名\t\t姓名\t\t角色" << endl;
-    for (const auto& u : users) {
-        cout << u.getId() << "\t" << u.getUsername() << "\t\t"
-             << u.getName() << "\t\t" << u.getRoleString() << endl;
-    }
+    int choice;
+    do {
+        cout << "\n--- 用户管理 ---" << endl;
+        cout << "1. 查看所有用户" << endl;
+        cout << "2. 修改用户姓名" << endl;
+        cout << "3. 重置用户密码" << endl;
+        cout << "4. 删除用户" << endl;
+        cout << "0. 返回" << endl;
+        cout << "请选择: ";
+        cin >> choice;
+
+        if (choice == 1) {
+            auto users = userMgr.getAllUsers();
+            cout << "\nID\t用户名\t\t姓名\t\t角色" << endl;
+            for (const auto& u : users) {
+                cout << u.getId() << "\t" << u.getUsername() << "\t\t"
+                     << u.getName() << "\t\t" << u.getRoleString() << endl;
+            }
+        } else if (choice == 2) {
+            int uid;
+            string newName;
+            cout << "请输入用户ID: ";
+            cin >> uid;
+            User u = userMgr.getUserById(uid);
+            if (u.getId() == 0) {
+                cout << "用户不存在！" << endl;
+                continue;
+            }
+            cout << "当前姓名: " << u.getName() << endl;
+            cout << "请输入新姓名: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, newName);
+            if (!InputValidator::isNameValid(newName)) {
+                cout << "姓名不能为空且不超过50个字符" << endl;
+                continue;
+            }
+            if (userMgr.updateUserName(uid, newName))
+                cout << "修改成功！" << endl;
+            else
+                cout << "修改失败" << endl;
+        } else if (choice == 3) {
+            int uid;
+            string newPass;
+            cout << "请输入用户ID: ";
+            cin >> uid;
+            User u = userMgr.getUserById(uid);
+            if (u.getId() == 0) {
+                cout << "用户不存在！" << endl;
+                continue;
+            }
+            cout << "用户: " << u.getUsername() << " (" << u.getRoleString() << ")" << endl;
+            cout << "请输入新密码(" << InputValidator::getPasswordRule() << "): ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, newPass);
+            if (!InputValidator::isPasswordValid(newPass)) {
+                cout << "密码格式不正确！" << InputValidator::getPasswordRule() << endl;
+                continue;
+            }
+            if (userMgr.resetPassword(uid, newPass))
+                cout << "密码重置成功！" << endl;
+            else
+                cout << "密码重置失败" << endl;
+        } else if (choice == 4) {
+            int uid;
+            cout << "请输入要删除的用户ID: ";
+            cin >> uid;
+            User u = userMgr.getUserById(uid);
+            if (u.getId() == 0) {
+                cout << "用户不存在！" << endl;
+                continue;
+            }
+            if (uid == authProxy.getCurrentUserId()) {
+                cout << "不能删除当前登录的管理员账号！" << endl;
+                continue;
+            }
+            // 如果是教师，检查是否有关联课程
+            if (u.getRole() == Role::TEACHER) {
+                Teacher t = userMgr.getTeacherByUserId(uid);
+                auto courses = courseMgr.getCoursesByTeacher(t.getId());
+                if (!courses.empty()) {
+                    cout << "该教师有 " << courses.size() << " 门关联课程，无法删除！请先删除其课程。" << endl;
+                    continue;
+                }
+            }
+            cout << "确认删除用户 [" << u.getUsername() << " - " << u.getName()
+                 << " - " << u.getRoleString() << "]？(y/n): ";
+            char confirm;
+            cin >> confirm;
+            if (confirm == 'y' || confirm == 'Y') {
+                if (userMgr.deleteUser(uid))
+                    cout << "删除成功！" << endl;
+                else
+                    cout << "删除失败" << endl;
+            } else {
+                cout << "已取消" << endl;
+            }
+        }
+    } while (choice != 0);
 }
 
 void adminExportReport() {
@@ -317,16 +432,36 @@ void teacherAddCourse() {
     cout << "请输入课程名称: ";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, name);
-    cout << "请输入学分: ";
+    if (!InputValidator::isNameValid(name)) {
+        cout << "课程名称不能为空" << endl;
+        return;
+    }
+    cout << "请输入学分(1-10): ";
     cin >> credit;
+    if (!InputValidator::isCreditValid(credit)) {
+        cout << "学分必须在1-10之间" << endl;
+        return;
+    }
     cout << "请输入学期(如 2025-2026-1): ";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, semester);
-    cout << "请输入课程容量: ";
+    if (semester.empty()) {
+        cout << "学期不能为空" << endl;
+        return;
+    }
+    cout << "请输入课程容量(1-500): ";
     cin >> capacity;
-    cout << "请输入上课时间(如 周一1-2,周三3-4): ";
+    if (!InputValidator::isCapacityValid(capacity)) {
+        cout << "课程容量必须在1-500之间" << endl;
+        return;
+    }
+    cout << "请输入上课时间(" << InputValidator::getScheduleRule() << "): ";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, schedule);
+    if (!InputValidator::isScheduleValid(schedule)) {
+        cout << "时间格式不正确！" << InputValidator::getScheduleRule() << endl;
+        return;
+    }
 
     if (courseMgr.addCourse(name, credit, semester, capacity, t.getId(), schedule))
         cout << "课程创建成功！" << endl;
@@ -529,21 +664,41 @@ void registerUser() {
     cin >> choice;
 
     string username, password, name;
-    cout << "请输入用户名: ";
+    cout << "请输入用户名(" << InputValidator::getUsernameRule() << "): ";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, username);
-    cout << "请输入密码: ";
+    if (!InputValidator::isUsernameValid(username)) {
+        cout << "用户名格式不正确！" << InputValidator::getUsernameRule() << endl;
+        return;
+    }
+    cout << "请输入密码(" << InputValidator::getPasswordRule() << "): ";
     getline(cin, password);
+    if (!InputValidator::isPasswordValid(password)) {
+        cout << "密码格式不正确！" << InputValidator::getPasswordRule() << endl;
+        return;
+    }
     cout << "请输入姓名: ";
     getline(cin, name);
+    if (!InputValidator::isNameValid(name)) {
+        cout << "姓名不能为空且不超过50个字符" << endl;
+        return;
+    }
 
     if (choice == 1) {
         string studentNo;
         int majorId;
-        cout << "请输入学号: ";
+        cout << "请输入学号(" << InputValidator::getStudentNoRule() << "): ";
         getline(cin, studentNo);
+        if (!InputValidator::isStudentNoValid(studentNo)) {
+            cout << "学号格式不正确！" << InputValidator::getStudentNoRule() << endl;
+            return;
+        }
         cout << "请输入专业ID: ";
         cin >> majorId;
+        if (!InputValidator::isPositiveInt(majorId)) {
+            cout << "专业ID必须为正整数" << endl;
+            return;
+        }
         if (userMgr.registerStudent(username, password, name, studentNo, majorId))
             cout << "学生注册成功！" << endl;
         else
@@ -551,10 +706,18 @@ void registerUser() {
     } else if (choice == 2) {
         string teacherNo;
         int collegeId;
-        cout << "请输入工号: ";
+        cout << "请输入工号(" << InputValidator::getTeacherNoRule() << "): ";
         getline(cin, teacherNo);
+        if (!InputValidator::isTeacherNoValid(teacherNo)) {
+            cout << "工号格式不正确！" << InputValidator::getTeacherNoRule() << endl;
+            return;
+        }
         cout << "请输入所属学院ID: ";
         cin >> collegeId;
+        if (!InputValidator::isPositiveInt(collegeId)) {
+            cout << "学院ID必须为正整数" << endl;
+            return;
+        }
         if (userMgr.registerTeacher(username, password, name, teacherNo, collegeId))
             cout << "教师注册成功！" << endl;
         else
@@ -611,6 +774,10 @@ void loginMenu() {
 }
 
 int main() {
+    // 初始化日志系统
+    Logger::getInstance()->init("data/system.log", LogLevel::DEBUG, true);
+    Logger::getInstance()->info("系统启动", "Main");
+
     // 初始化数据库
     DatabaseManager::getInstance()->open("data/campus.db");
 
@@ -620,7 +787,9 @@ int main() {
 
     loginMenu();
 
+    Logger::getInstance()->info("系统关闭", "Main");
     DatabaseManager::destroyInstance();
+    Logger::destroyInstance();
     cout << "感谢使用，再见！" << endl;
     return 0;
 }

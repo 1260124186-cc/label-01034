@@ -12,6 +12,10 @@ public:
     bool deleteCollege(int id);
     std::vector<College> getAllColleges();
     College getCollegeById(int id);
+    // 检查学院下是否有关联的专业
+    bool hasRelatedMajors(int collegeId);
+    // 检查学院下是否有关联的教师
+    bool hasRelatedTeachers(int collegeId);
 };
 
 #endif // COLLEGE_MANAGER_H
