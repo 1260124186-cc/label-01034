@@ -1,0 +1,46 @@
+# ===== 编译产物 =====
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dSYM/
+build/
+campus_system
+
+# ===== 数据库文件 =====
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+
+# ===== 导出报表 =====
+data/*.csv
+data/*.txt
+
+# ===== IDE / 编辑器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.cproject
+.settings/
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ===== Windows =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== Linux =====
+*~
+
+# ===== 日志 =====
+*.log
