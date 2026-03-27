@@ -8,9 +8,13 @@ BUILD_DIR = build
 
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
+MAIN_OBJECT = $(BUILD_DIR)/Main.o
+TEST_MAIN_OBJECT = $(BUILD_DIR)/TestMain.o
+COMMON_OBJECTS = $(filter-out $(MAIN_OBJECT) $(TEST_MAIN_OBJECT), $(OBJECTS))
 TARGET = campus_system
+TEST_TARGET = test_campus_system
 
-.PHONY: all clean run
+.PHONY: all clean run test test-run
 
 all: $(BUILD_DIR) $(TARGET)
 
@@ -27,5 +31,13 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 run: all
 	./$(TARGET)
 
+test: $(BUILD_DIR) $(TEST_TARGET)
+
+$(TEST_TARGET): $(TEST_MAIN_OBJECT) $(COMMON_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-run: test
+	./$(TEST_TARGET)
+
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) data/campus.db
+	rm -rf $(BUILD_DIR) $(TARGET) $(TEST_TARGET) data/campus.db data/test_campus.db data/test_*.csv data/test_*.txt
